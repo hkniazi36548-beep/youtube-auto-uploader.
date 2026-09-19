@@ -1,32 +1,33 @@
-name: Daily YouTube Uploader
+name: Run YouTube Automation
 
 on:
   schedule:
-    - cron: '0 15 * * *'  # Har roz Pakistan ke waqt ke mutabiq Raat 8:00 Baje chalega
-  workflow_dispatch:       # Manual button se chalane ke liye
+    - cron: '0 15 * * *'
+  workflow_dispatch:
 
 jobs:
-  upload:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v3
+    - uses: actions/checkout@v3
 
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.x'
+        python-version: '3.9'
 
-    - name: Install Dependencies
+    - name: Install Video Editor and Libraries
       run: |
-        python -m pip install --upgrade pip
-        pip install google-api-python-client google-auth-oauthlib google-auth-httplib2
+        sudo apt-get update
+        sudo apt-get install -y ffmpeg
+        pip install requests moviepy==1.0.3 google-api-python-client google-auth-oauthlib google-auth-httplib2
 
-    - name: Run Upload Script
+    - name: Run Auto Video Creator
       env:
         CLIENT_ID: ${{ secrets.CLIENT_ID }}
         CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
         REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
-      run: |
-        python upload.py
+        PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+        ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+      run: python upload.py
