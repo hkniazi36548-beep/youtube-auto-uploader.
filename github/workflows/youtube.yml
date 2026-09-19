@@ -1,0 +1,32 @@
+name: Daily YouTube Uploader
+
+on:
+  schedule:
+    - cron: '0 15 * * *'  # Har roz Pakistan ke waqt ke mutabiq Raat 8:00 Baje chalega
+  workflow_dispatch:       # Manual button se chalane ke liye
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install google-api-python-client google-auth-oauthlib google-auth-httplib2
+
+    - name: Run Upload Script
+      env:
+        CLIENT_ID: ${{ secrets.CLIENT_ID }}
+        CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
+        REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
+      run: |
+        python upload.py
