@@ -1,6 +1,8 @@
 import os
+import random
+import asyncio
 import requests
-from gtts import gTTS
+import edge_tts
 from moviepy.editor import VideoFileClip, AudioFileClip
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
@@ -12,47 +14,71 @@ CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
 REFRESH_TOKEN = os.environ.get("REFRESH_TOKEN")
 PEXELS_API_KEY = os.environ.get("PEXELS_API_KEY")
 
-# 2. Urdu/Hindi Video ke liye Script aur Topic
-URDU_SCRIPT = "Kya aap jante hain ke dunya ki sab se khoobsurat aur purisrar jagahon mein se aik Qudrati wadi hai, jahan pani hamesha neela rehta hai? Yeh qudrat ka aik behtareen karishma hai."
-VIDEO_QUERY = "nature landscape"
+# 2. Mukhtalif Topics aur Scripts ki List
+TOPICS_POOL = [
+    {
+        "script": "Kya aap jante hain ke dunya ki sab se khoobsurat aur purisrar jagahon mein se aik Qudrati wadi hai, jahan pani hamesha neela rehta hai? Yeh qudrat ka aik behtareen karishma hai.",
+        "query": "nature landscape",
+        "title": "Qudrat Ka Karishma - Amazing Nature #Shorts",
+        "description": "Dunya ke khoobsurat aur hairan kun manazir. Yeh qudrat ka aik behtareen karishma hai.\n\n#Shorts #Nature #AmazingFacts #QudratKaKarishma"
+    },
+    {
+        "script": "Kya aapko pata hai ke samandar ki gehrai mein aise aise raaz chhupe hain jo insan ko hairan kar dete hain? Aise hi raazon ko janne ke liye jude rahiye.",
+        "query": "deep ocean waves",
+        "title": "Samandar Ke Raaz - Ocean Mysteries #Shorts",
+        "description": "Samandar ki gehrai aur uske anokhe raaz.\n\n#Shorts #Ocean #Mysteries #Facts"
+    },
+    {
+        "script": "Aasman par chamakte hue sitare aur khali kainaat humein hamesha se apni taraf khinchti hai. Kainaat ki yeh wusat hamari soch se bhi kahin barhi hai.",
+        "query": "galaxy stars night sky",
+        "title": "Kainaat Ki Wusat - Space Universe #Shorts",
+        "description": "Aasman aur kainaat ke anokhe manazir.\n\n#Shorts #Space #Universe #Stars"
+    }
+]
+
+# Randomly aik topic select hoga har run par
+selected_topic = random.choice(TOPICS_POOL)
+URDU_SCRIPT = selected_topic["script"]
+VIDEO_QUERY = selected_topic["query"]
+VIDEO_TITLE = selected_topic["title"]
+VIDEO_DESCRIPTION = selected_topic["description"]
+
+async def generate_voiceover_async():
+    print("Edge-TTS se professional Urdu/Hindi voiceover generate ho raha hai...")
+    # 'ur-PK-AsadNeural' ya 'hi-IN-SwaraNeural' behtareen awaz ke liye
+    voice = "hi-IN-SwaraNeural"
+    communicate = edge_tts.Communicate(URDU_SCRIPT, voice)
+    await communicate.save("voiceover.mp3")
+    return "voiceover.mp3"
 
 def generate_voiceover():
-    print("Urdu/Hindi voiceover generate ho raha hai...")
-    tts = gTTS(text=URDU_SCRIPT, lang='hi', slow=False)
-    tts.save("voiceover.mp3")
-    return "voiceover.mp3"
+    return asyncio.run(generate_voiceover_async())
 
 def download_pexels_video():
     print("Pexels se video download ho rahi hai...")
     headers = {"Authorization": PEXELS_API_KEY}
     url = f"https://api.pexels.com/videos/search?query={VIDEO_QUERY}&per_page=1"
     response = requests.get(url, headers=headers).json()
-    
     if "videos" in response and len(response["videos"]) > 0:
         video_files = response["videos"][0]["video_files"]
         video_url = video_files[0]["link"]
-        
         vid_data = requests.get(video_url)
         with open("background.mp4", "wb") as f:
             f.write(vid_data.content)
         return "background.mp4"
-    else:
-        raise Exception("Pexels video nahi mili!")
+    return None
 
-def create_video():
-    audio_path = generate_voiceover()
-    video_path = download_pexels_video()
-    
-    print("Video aur Audio ko jod kar final video ban rahi hai...")
+def create_video(video_path, audio_path):
+    print("Video aur audio combine ho rahi hai...")
     video = VideoFileClip(video_path)
     audio = AudioFileClip(audio_path)
     
-    if video.duration > audio.duration:
-        video = video.subclip(0, audio.duration)
+    video = video.set_audio(audio)
+    video = video.subclip(0, min(video.duration, audio.duration))
     
-    final_video = video.set_audio(audio)
-    final_video.write_videofile("final_output.mp4", fps=24, codec="libx264", audio_codec="aac")
-    return "final_output.mp4"
+    output_path = "final_output.mp4"
+    video.write_videofile(output_path, fps=24, codec='libx264', audio_codec='aac')
+    return output_path
 
 def upload_to_youtube(file_path):
     print("YouTube par video upload ho rahi hai...")
@@ -63,26 +89,32 @@ def upload_to_youtube(file_path):
         client_secret=CLIENT_SECRET,
         token_uri="https://oauth2.googleapis.com/token"
     )
-    
-    youtube = build("youtube", "v3", credentials=creds)
+    youtube = build('youtube', 'v3', credentials=creds)
     
     body = {
-        "snippet": {
-            "title": "Qudrat ka Karishma | Amazing Facts in Urdu #Shorts",
-            "description": "Yeh video khudkar tareeqay se YouTube automation ke zariye banai gayi hai.",
-            "tags": ["shorts", "urdufacts", "amazingfacts", "nature"],
-            "categoryId": "22"
+        'snippet': {
+            'title': VIDEO_TITLE,
+            'description': VIDEO_DESCRIPTION,
+            'tags': ['shorts', 'nature', 'facts', 'urdu', 'hindi'],
+            'categoryId': '22'
         },
-        "status": {
-            "privacyStatus": "public"
+        'status': {
+            'privacyStatus': 'public'
         }
     }
     
     media = MediaFileUpload(file_path, chunksize=-1, resumable=True)
-    request = youtube.videos().insert(part="snippet,status", body=body, media_body=media)
+    request = youtube.videos().insert(
+        part='snippet,status',
+        body=body,
+        media_body=media
+    )
     response = request.execute()
-    print(f"Video kamyabi ke sath upload ho gayi! Video ID: {response.get('id')}")
+    print(f"Video successfully upload ho gayi! ID: {response.get('id')}")
 
 if __name__ == "__main__":
-    output_file = create_video()
-    upload_to_youtube(output_file)
+    audio = generate_voiceover()
+    bg_video = download_pexels_video()
+    if bg_video:
+        final_vid = create_video(bg_video, audio)
+        upload_to_youtube(final_vid)
