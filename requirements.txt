@@ -1,7 +1,7 @@
-openai
 requests
 gtts
 moviepy==1.0.3
 google-api-python-client
 google-auth-oauthlib
 google-auth-httplib2
+edge-ts
