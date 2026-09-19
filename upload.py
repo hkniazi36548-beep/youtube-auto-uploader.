@@ -3,6 +3,7 @@ import random
 import asyncio
 import requests
 import edge_tts
+import json
 from moviepy.editor import VideoFileClip, AudioFileClip
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
@@ -13,39 +14,53 @@ CLIENT_ID = os.environ.get("CLIENT_ID")
 CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
 REFRESH_TOKEN = os.environ.get("REFRESH_TOKEN")
 PEXELS_API_KEY = os.environ.get("PEXELS_API_KEY")
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 
-# 2. Mukhtalif Topics aur Scripts ki List
-TOPICS_POOL = [
-    {
-        "script": "Kya aap jante hain ke dunya ki sab se khoobsurat aur purisrar jagahon mein se aik Qudrati wadi hai, jahan pani hamesha neela rehta hai? Yeh qudrat ka aik behtareen karishma hai.",
-        "query": "nature landscape",
-        "title": "Qudrat Ka Karishma - Amazing Nature #Shorts",
-        "description": "Dunya ke khoobsurat aur hairan kun manazir. Yeh qudrat ka aik behtareen karishma hai.\n\n#Shorts #Nature #AmazingFacts #QudratKaKarishma"
-    },
-    {
-        "script": "Kya aapko pata hai ke samandar ki gehrai mein aise aise raaz chhupe hain jo insan ko hairan kar dete hain? Aise hi raazon ko janne ke liye jude rahiye.",
-        "query": "deep ocean waves",
-        "title": "Samandar Ke Raaz - Ocean Mysteries #Shorts",
-        "description": "Samandar ki gehrai aur uske anokhe raaz.\n\n#Shorts #Ocean #Mysteries #Facts"
-    },
-    {
-        "script": "Aasman par chamakte hue sitare aur khali kainaat humein hamesha se apni taraf khinchti hai. Kainaat ki yeh wusat hamari soch se bhi kahin barhi hai.",
-        "query": "galaxy stars night sky",
-        "title": "Kainaat Ki Wusat - Space Universe #Shorts",
-        "description": "Aasman aur kainaat ke anokhe manazir.\n\n#Shorts #Space #Universe #Stars"
+def get_dynamic_content():
+    print("ChatGPT se bilkul naya topic aur script banwaya ja raha hai...")
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {OPENAI_API_KEY}"
     }
-]
+    
+    # ChatGPT ko instruction ke har dafa kuch naya banaye
+    prompt = """Generate a unique, mind-blowing and interesting fact for a YouTube Short. 
+    Return ONLY a valid JSON object (no markdown format, no extra text) with these exactly named keys: 
+    "script" (The voiceover text in Roman Urdu/Hindi, around 50-60 words to change duration), 
+    "query" (2-3 English words for Pexels video search, e.g., 'mysterious forest', 'space galaxy', 'deep ocean'), 
+    "title" (A catchy YouTube title in Roman Urdu or English with #Shorts), 
+    "description" (A short description with 4-5 relevant hashtags)."""
+    
+    data = {
+        "model": "gpt-3.5-turbo",
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0.9 # High temperature taake har dafa naya topic aaye
+    }
+    
+    try:
+        response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=data)
+        response_json = response.json()
+        content = response_json['choices'][0]['message']['content']
+        return json.loads(content)
+    except Exception as e:
+        print("OpenAI API error, default topic use ho raha hai:", e)
+        # Agar API fail ho jaye toh yeh backup chalega
+        return {
+            "script": "Kya aapko pata hai ke dunya ki sabse gehri jagah Mariana Trench hai? Yeh itni gehri hai ke Mount Everest ko bhi isme daal diya jaye toh woh bhi doob jayega.",
+            "query": "deep ocean dark",
+            "title": "Dunya Ki Sabse Gehri Jagah - Mariana Trench #Shorts",
+            "description": "Samandar ke anokhe raaz aur hairan kun facts.\n\n#Shorts #Ocean #Mysteries #Facts"
+        }
 
-# Randomly aik topic select hoga har run par
-selected_topic = random.choice(TOPICS_POOL)
-URDU_SCRIPT = selected_topic["script"]
-VIDEO_QUERY = selected_topic["query"]
-VIDEO_TITLE = selected_topic["title"]
-VIDEO_DESCRIPTION = selected_topic["description"]
+# ChatGPT se data lena
+content_data = get_dynamic_content()
+URDU_SCRIPT = content_data["script"]
+VIDEO_QUERY = content_data["query"]
+VIDEO_TITLE = content_data["title"]
+VIDEO_DESCRIPTION = content_data["description"]
 
 async def generate_voiceover_async():
     print("Edge-TTS se professional Urdu/Hindi voiceover generate ho raha hai...")
-    # 'ur-PK-AsadNeural' ya 'hi-IN-SwaraNeural' behtareen awaz ke liye
     voice = "hi-IN-SwaraNeural"
     communicate = edge_tts.Communicate(URDU_SCRIPT, voice)
     await communicate.save("voiceover.mp3")
@@ -55,7 +70,7 @@ def generate_voiceover():
     return asyncio.run(generate_voiceover_async())
 
 def download_pexels_video():
-    print("Pexels se video download ho rahi hai...")
+    print(f"Pexels se '{VIDEO_QUERY}' ki video download ho rahi hai...")
     headers = {"Authorization": PEXELS_API_KEY}
     url = f"https://api.pexels.com/videos/search?query={VIDEO_QUERY}&per_page=1"
     response = requests.get(url, headers=headers).json()
@@ -95,7 +110,7 @@ def upload_to_youtube(file_path):
         'snippet': {
             'title': VIDEO_TITLE,
             'description': VIDEO_DESCRIPTION,
-            'tags': ['shorts', 'nature', 'facts', 'urdu', 'hindi'],
+            'tags': ['shorts', 'facts', 'urdu', 'hindi', 'ai'],
             'categoryId': '22'
         },
         'status': {
