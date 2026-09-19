@@ -1,24 +1,24 @@
 import os
 import requests
 from gtts import gTTS
-from moviepy.editor import VideoFileClip, AudioFileClip, TextClip, CompositeVideoClip
+from moviepy.editor import VideoFileClip, AudioFileClip
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 from google.oauth2.credentials import Credentials
 
-# 1. API Keys aur Credentials jo GitHub Secrets se milenge
+# 1. API Keys aur Credentials
 CLIENT_ID = os.environ.get("CLIENT_ID")
 CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
 REFRESH_TOKEN = os.environ.get("REFRESH_TOKEN")
 PEXELS_API_KEY = os.environ.get("PEXELS_API_KEY")
 
-# 2. Urdu/Hindi Video ke liye Script (Aap yahan apna topic badal sakte hain)
+# 2. Urdu/Hindi Video ke liye Script aur Topic
 URDU_SCRIPT = "Kya aap jante hain ke dunya ki sab se khoobsurat aur purisrar jagahon mein se aik Qudrati wadi hai, jahan pani hamesha neela rehta hai? Yeh qudrat ka aik behtareen karishma hai."
-VIDEO_QUERY = "nature landscape" # Pexels se video search karne ke liye keyword
+VIDEO_QUERY = "nature landscape"
 
 def generate_voiceover():
     print("Urdu/Hindi voiceover generate ho raha hai...")
-    tts = gTTS(text=URDU_SCRIPT, lang='hi', slow=False) # 'hi' hindi/urdu accent ke liye behtareen kaam karta hai
+    tts = gTTS(text=URDU_SCRIPT, lang='hi', slow=False)
     tts.save("voiceover.mp3")
     return "voiceover.mp3"
 
@@ -30,7 +30,6 @@ def download_pexels_video():
     
     if "videos" in response and len(response["videos"]) > 0:
         video_files = response["videos"][0]["video_files"]
-        # HD ya sab se behtareen quality wali video link uthana
         video_url = video_files[0]["link"]
         
         vid_data = requests.get(video_url)
@@ -48,7 +47,6 @@ def create_video():
     video = VideoFileClip(video_path)
     audio = AudioFileClip(audio_path)
     
-    # Video ki lambai audio ke mutabiq set karna (Shorts ke liye max 50-60 sec)
     if video.duration > audio.duration:
         video = video.subclip(0, audio.duration)
     
@@ -73,10 +71,10 @@ def upload_to_youtube(file_path):
             "title": "Qudrat ka Karishma | Amazing Facts in Urdu #Shorts",
             "description": "Yeh video khudkar tareeqay se YouTube automation ke zariye banai gayi hai.",
             "tags": ["shorts", "urdufacts", "amazingfacts", "nature"],
-            "categoryId": "22" # People & Blogs / Education
+            "categoryId": "22"
         },
         "status": {
-            "privacyStatus": "public" # Aap chahein to 'private' bhi rakh sakte hain shuru mein check karne ke liye
+            "privacyStatus": "public"
         }
     }
     
