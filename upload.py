@@ -87,14 +87,18 @@ def generate_voiceover():
     return "voiceover.mp3"
 
 def download_background_music():
-    print("Background music download ho raha hai...")
+    print("Background music check ki ja rahi hai...")
     try:
-        r = requests.get("https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf756.mp3?filename=cinematic-time-10590.mp3", timeout=10)
-        with open("bgm.mp3", "wb") as f:
-            f.write(r.content)
-        return "bgm.mp3"
-    except:
-        return None
+        # Safe audio link check
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        r = requests.get("https://actions.google.com/sounds/v1/ambiences/rain_heavy.ogg", headers=headers, timeout=10)
+        if r.status_code == 200 and len(r.content) > 10000:
+            with open("bgm.ogg", "wb") as f:
+                f.write(r.content)
+            return "bgm.ogg"
+    except Exception as e:
+        print("BGM download fail ho gaya, voiceover ke sath chalenge:", e)
+    return None
 
 def download_pexels_videos():
     print(f"Pexels se '{VIDEO_QUERY}' ki Cinematic Videos download ho rahi hain...")
@@ -121,7 +125,7 @@ def download_pexels_videos():
     return video_paths
 
 def create_video(video_paths, audio_path, bgm_path):
-    print("Videos, Voiceover aur BGM ko merge kiya ja raha hai...")
+    print("Videos aur Voiceover ko merge kiya ja raha hai...")
     voice_audio = AudioFileClip(audio_path)
     
     clips = []
@@ -150,16 +154,18 @@ def create_video(video_paths, audio_path, bgm_path):
     final_duration = min(voice_audio.duration, 55.0)
     final_video = final_video.subclip(0, final_duration)
     
-    # Audio Mixing: Voiceover + Background Music (Low volume 15%)
-    if bgm_path and os.path.exists(bgm_path):
-        bgm_audio = AudioFileClip(bgm_path).volumex(0.15)
-        if bgm_audio.duration < final_duration:
-            bgm_audio = bgm_audio.fx(vfx.loop, duration=final_duration)
+    # Safe Audio Mixing
+    try:
+        if bgm_path and os.path.exists(bgm_path):
+            bgm_audio = AudioFileClip(bgm_path).volumex(0.15)
+            if bgm_audio.duration < final_duration:
+                bgm_audio = bgm_audio.fx(vfx.loop, duration=final_duration)
+            else:
+                bgm_audio = bgm_audio.subclip(0, final_duration)
+            final_audio = CompositeAudioClip([voice_audio.subclip(0, final_duration), bgm_audio])
         else:
-            bgm_audio = bgm_audio.subclip(0, final_duration)
-            
-        final_audio = CompositeAudioClip([voice_audio.subclip(0, final_duration), bgm_audio])
-    else:
+            final_audio = voice_audio.subclip(0, final_duration)
+    except:
         final_audio = voice_audio.subclip(0, final_duration)
         
     final_video = final_video.set_audio(final_audio)
