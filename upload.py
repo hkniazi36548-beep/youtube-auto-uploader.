@@ -32,11 +32,11 @@ def get_dynamic_content():
     }
     
     categories = [
-        "Mind-Blowing Space Mysteries",
-        "Creepy Deep Ocean Facts",
-        "Psychology Tricks & Human Brain",
+        "Space Mysteries",
+        "Deep Ocean Facts",
+        "Psychology & Human Brain",
         "Unknown Dark History",
-        "AI & Future Technology Warning"
+        "AI & Future Technology"
     ]
     selected_category = random.choice(categories)
     
@@ -44,16 +44,12 @@ def get_dynamic_content():
     Create a highly suspenseful, viral video script about: '{selected_category}'.
     
     CRITICAL RULES:
-    1. The script MUST be written in ACTUAL NATIVE URDU TEXT (اردو). Do NOT use Roman Urdu.
+    1. Script MUST be in PERFECT HINDI (Devanagari script: हिंदी). Do not use English or Roman Hindi.
     2. Length MUST be exactly around 115-125 words (for 50-55 seconds audio).
-    3. Hook (0-3s): Start with a shocking question.
-    4. Retention (3-45s): Build suspense. Don't reveal the main secret until the end.
-    5. Outro (45-50s): Tell them to subscribe.
-    
-    Return ONLY a valid JSON object with:
-    "script": "Urdu text",
+    3. Return ONLY a valid JSON object with:
+    "script": "Hindi text",
     "query": "English keyword for Pexels (e.g. 'galaxy', 'ai robot')",
-    "title": "Title with #Shorts",
+    "title": "Viral Title in Hindi with #Shorts",
     "description": "Description with hashtags"
     """
     
@@ -68,47 +64,27 @@ def get_dynamic_content():
         content = response.json()['choices'][0]['message']['content']
         return json.loads(content)
     except Exception as e:
-        print("API error aaya hai. Emergency Backup se random topic uthaya ja raha hai...")
-        
-        # 4 ALAG ALAG BACKUP TOPICS TA KE VIDEO REPEAT NA HO
+        print("API error, using backup...")
         backups = [
             {
-                "script": "کیا آپ کو معلوم ہے کہ خلا میں ایک ایسا سیارہ موجود ہے جو پوری طرح ہیرے یعنی ڈائمنڈ سے بنا ہے؟ سائنسدانوں کے مطابق یہ سیارہ زمین سے دو گنا بڑا ہے اور اس کا زیادہ تر حصہ کاربن پر مشتمل ہے۔ ذرا سوچیں اگر انسان کبھی وہاں پہنچ گیا تو کیا ہوگا؟ لیکن وہاں کا درجہ حرارت اتنا زیادہ ہے کہ کوئی بھی چیز سیکنڈوں میں جل کر راکھ بن جائے۔ ایسی ہی مزید دلچسپ اور حیران کن معلومات کے لیے ابھی ہمارے چینل کو سبسکرائب کریں!",
+                "script": "क्या आप जानते हैं कि अंतरिक्ष में एक ऐसा ग्रह है जो पूरी तरह से हीरे यानी डायमंड से बना है? वैज्ञानिकों के अनुसार यह ग्रह पृथ्वी से दोगुना बड़ा है। जरा सोचिए अगर इंसान कभी वहां पहुंच गया तो क्या होगा? लेकिन वहां का तापमान इतना ज्यादा है कि कोई भी चीज सेकंडों में जलकर राख बन जाए। ऐसी ही और रहस्यमयी जानकारियों के लिए अभी सब्सक्राइब करें!",
                 "query": "space galaxy universe",
-                "title": "Heere Se Bana Sayyara! 💎 #Shorts #SpaceFacts",
-                "description": "Khala ke hairan kun raaz! \n\n#Shorts #SpaceMysteries #FactsInUrdu #ViralFacts"
-            },
-            {
-                "script": "کیا آپ جانتے ہیں کہ مصر کے اہرام یعنی پیرامڈز کیسے بنائے گئے تھے؟ آج کی جدید ٹیکنالوجی کے باوجود سائنسدان حیران ہیں کہ ہزاروں سال پہلے انسانوں نے اتنے بھاری پتھر اتنی بلندی تک کیسے پہنچائے۔ کچھ لوگوں کا ماننا ہے کہ یہ کام انسانوں کا نہیں بلکہ کسی اور دنیا کی مخلوق یعنی ایلینز کا تھا۔ سچ جو بھی ہو، یہ آج بھی دنیا کا سب سے بڑا راز ہے۔ مزید ایسی پراسرار ویڈیوز کے لیے چینل کو لازمی سبسکرائب کریں!",
-                "query": "egypt pyramids mystery",
-                "title": "Pyramids Ka Sabse Bara Raaz! 👽 #Shorts #History",
-                "description": "Misr ke pyramids kaise bane? \n\n#Shorts #HistoryFacts #Mysteries #UrduFacts"
-            },
-            {
-                "script": "کیا مصنوعی ذہانت یعنی آرٹیفیشل انٹیلیجنس مستقبل میں انسانوں کو ختم کر دے گی؟ آج کل روبوٹس اتنے سمارٹ ہو چکے ہیں کہ وہ خود سے سوچنے اور سیکھنے کی صلاحیت رکھتے ہیں۔ کئی بڑے سائنسدانوں نے وارننگ دی ہے کہ اگر اے آئی کنٹرول سے باہر ہو گئی تو یہ انسانیت کے لیے سب سے بڑا خطرہ بن سکتی ہے۔ کیا ہم اپنے ہی ہاتھوں اپنی تباہی کا سامان تیار کر رہے ہیں؟ مزید جاننے کے لیے ابھی چینل کو سبسکرائب کریں!",
-                "query": "ai robot future",
-                "title": "AI Insano Ko Khatam Kar Dega? 🤖 #Shorts #Technology",
-                "description": "AI aur robots ka khaufnak mustaqbil! \n\n#Shorts #AI #TechFacts #UrduHindiFacts"
-            },
-            {
-                "script": "کیا آپ نے کبھی سوچا ہے کہ ہمارے سمندر کی گہرائی میں کیا چھپا ہے؟ زمین کا اکہتر فیصد حصہ پانی پر مشتمل ہے، لیکن انسان آج تک سمندر کا صرف پانچ فیصد حصہ ہی دریافت کر پایا ہے۔ باقی پچانوے فیصد بالکل اندھیرا اور راز ہے۔ ماریانا ٹرینچ، جو دنیا کی سب سے گہری جگہ ہے، وہاں ایسے عجیب و غریب جانور رہتے ہیں جو بغیر روشنی کے زندہ ہیں۔ ایسی ہی پراسرار اور حیران کن ویڈیوز کے لیے ابھی چینل کو سبسکرائب کریں!",
-                "query": "dark deep ocean",
-                "title": "Samandar Ka Khaufnak Raaz! 😱 #Shorts #Facts",
-                "description": "Samandar ki gehrai ke raaz. \n\n#Shorts #ViralFacts #OceanMysteries #UrduFacts"
+                "title": "हीरे से बना ग्रह! 💎 #Shorts #SpaceFacts",
+                "description": "अंतरिक्ष के रहस्य! #Shorts #SpaceMysteries #HindiFacts"
             }
         ]
         return random.choice(backups)
 
 content_data = get_dynamic_content()
-URDU_SCRIPT = content_data["script"]
+HINDI_SCRIPT = content_data["script"]
 VIDEO_QUERY = content_data["query"]
 VIDEO_TITLE = content_data["title"]
 VIDEO_DESCRIPTION = content_data["description"]
 
 async def generate_voiceover_async():
-    print("Voiceover tayar ho raha hai...")
-    voice = "ur-PK-AsadNeural" 
-    communicate = edge_tts.Communicate(URDU_SCRIPT, voice)
+    print("Hindi Specialist Voiceover tayar ho raha hai...")
+    voice = "hi-IN-MadhurNeural" 
+    communicate = edge_tts.Communicate(HINDI_SCRIPT, voice)
     await communicate.save("voiceover.mp3")
     return "voiceover.mp3"
 
@@ -166,10 +142,9 @@ def create_video(video_paths, audio_path):
     if final_video.duration < audio.duration:
         final_video = final_video.fx(vfx.loop, duration=audio.duration)
         
-    final_video = final_video.set_audio(audio)
-    
     final_duration = min(audio.duration, 55.0)
     final_video = final_video.subclip(0, final_duration)
+    final_video = final_video.set_audio(audio)
     
     output_path = "final_output.mp4"
     final_video.write_videofile(output_path, fps=30, codec='libx264', audio_codec='aac', preset='ultrafast')
@@ -181,7 +156,7 @@ def upload_to_youtube(file_path):
     youtube = build('youtube', 'v3', credentials=creds)
     
     body = {
-        'snippet': {'title': VIDEO_TITLE, 'description': VIDEO_DESCRIPTION, 'tags': ['shorts', 'facts', 'viral', 'urdu', 'hindi'], 'categoryId': '22'},
+        'snippet': {'title': VIDEO_TITLE, 'description': VIDEO_DESCRIPTION, 'tags': ['shorts', 'facts', 'viral', 'hindi'], 'categoryId': '22'},
         'status': {'privacyStatus': 'public'}
     }
     
@@ -191,9 +166,9 @@ def upload_to_youtube(file_path):
     print(f"Shorts successfully upload ho gayi! ID: {response.get('id')}")
 
 if __name__ == "__main__":
-    audio = generate_voiceover()
+    audio_file = generate_voiceover()
     bg_videos = download_pexels_videos()
     if bg_videos:
-        final_vid = create_video(bg_videos, audio)
+        final_vid = create_video(bg_videos, audio_file)
         if final_vid:
             upload_to_youtube(final_vid)
