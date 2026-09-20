@@ -1,4 +1,10 @@
 import os
+from PIL import Image
+
+# MoviePy ANTIALIAS Error Fix
+if not hasattr(Image, 'ANTIALIAS'):
+    Image.ANTIALIAS = Image.LANCZOS
+
 import random
 import asyncio
 import requests
