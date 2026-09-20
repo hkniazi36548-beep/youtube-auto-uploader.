@@ -6,9 +6,8 @@ if not hasattr(Image, 'ANTIALIAS'):
     Image.ANTIALIAS = Image.LANCZOS
 
 import random
-import asyncio
 import requests
-import edge_tts
+from gtts import gTTS
 import json
 from moviepy.editor import VideoFileClip, AudioFileClip, concatenate_videoclips
 from moviepy.video.fx.all import crop
@@ -81,15 +80,11 @@ VIDEO_QUERY = content_data["query"]
 VIDEO_TITLE = content_data["title"]
 VIDEO_DESCRIPTION = content_data["description"]
 
-async def generate_voiceover_async():
-    print("Hindi Specialist Voiceover tayar ho raha hai...")
-    voice = "hi-IN-MadhurNeural" 
-    communicate = edge_tts.Communicate(HINDI_SCRIPT, voice)
-    await communicate.save("voiceover.mp3")
-    return "voiceover.mp3"
-
 def generate_voiceover():
-    return asyncio.run(generate_voiceover_async())
+    print("Google Hindi Voiceover tayar ho raha hai...")
+    tts = gTTS(text=HINDI_SCRIPT, lang='hi', slow=False)
+    tts.save("voiceover.mp3")
+    return "voiceover.mp3"
 
 def download_pexels_videos():
     print(f"Pexels se '{VIDEO_QUERY}' ki Nayi Videos download ho rahi hain...")
