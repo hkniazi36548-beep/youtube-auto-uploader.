@@ -9,7 +9,7 @@ import random
 import requests
 from gtts import gTTS
 import json
-from moviepy.editor import VideoFileClip, AudioFileClip, concatenate_videoclips
+from moviepy.editor import VideoFileClip, AudioFileClip, concatenate_videoclips, CompositeAudioClip
 from moviepy.video.fx.all import crop
 import moviepy.video.fx.all as vfx
 from googleapiclient.discovery import build
@@ -47,9 +47,9 @@ def get_dynamic_content():
     2. Length MUST be exactly around 115-125 words (for 50-55 seconds audio).
     3. Return ONLY a valid JSON object with:
     "script": "Hindi text",
-    "query": "English keyword for Pexels (e.g. 'galaxy', 'ai robot')",
-    "title": "Viral Title in Hindi with #Shorts",
-    "description": "Description with hashtags"
+    "query": "English keyword for Pexels (e.g. 'cinematic dark galaxy', 'mysterious ocean abyss')",
+    "title": "Viral Title in Hindi #Shorts",
+    "description": "Description with hashtags #shorts"
     """
     
     data = {
@@ -67,8 +67,8 @@ def get_dynamic_content():
         backups = [
             {
                 "script": "क्या आप जानते हैं कि अंतरिक्ष में एक ऐसा ग्रह है जो पूरी तरह से हीरे यानी डायमंड से बना है? वैज्ञानिकों के अनुसार यह ग्रह पृथ्वी से दोगुना बड़ा है। जरा सोचिए अगर इंसान कभी वहां पहुंच गया तो क्या होगा? लेकिन वहां का तापमान इतना ज्यादा है कि कोई भी चीज सेकंडों में जलकर राख बन जाए। ऐसी ही और रहस्यमयी जानकारियों के लिए अभी सब्सक्राइब करें!",
-                "query": "space galaxy universe",
-                "title": "हीरे से बना ग्रह! 💎 #Shorts #SpaceFacts",
+                "query": "cinematic space galaxy 4k",
+                "title": "हीरे से बना ग्रह! 💎 #Shorts",
                 "description": "अंतरिक्ष के रहस्य! #Shorts #SpaceMysteries #HindiFacts"
             }
         ]
@@ -76,7 +76,7 @@ def get_dynamic_content():
 
 content_data = get_dynamic_content()
 HINDI_SCRIPT = content_data["script"]
-VIDEO_QUERY = content_data["query"]
+VIDEO_QUERY = content_data["query"] + " cinematic 4k"
 VIDEO_TITLE = content_data["title"]
 VIDEO_DESCRIPTION = content_data["description"]
 
@@ -86,8 +86,18 @@ def generate_voiceover():
     tts.save("voiceover.mp3")
     return "voiceover.mp3"
 
+def download_background_music():
+    print("Background music download ho raha hai...")
+    try:
+        r = requests.get("https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf756.mp3?filename=cinematic-time-10590.mp3", timeout=10)
+        with open("bgm.mp3", "wb") as f:
+            f.write(r.content)
+        return "bgm.mp3"
+    except:
+        return None
+
 def download_pexels_videos():
-    print(f"Pexels se '{VIDEO_QUERY}' ki Nayi Videos download ho rahi hain...")
+    print(f"Pexels se '{VIDEO_QUERY}' ki Cinematic Videos download ho rahi hain...")
     headers = {"Authorization": PEXELS_API_KEY}
     url = f"https://api.pexels.com/videos/search?query={VIDEO_QUERY}&orientation=portrait&per_page=20"
     response = requests.get(url, headers=headers).json()
@@ -110,11 +120,11 @@ def download_pexels_videos():
                     pass
     return video_paths
 
-def create_video(video_paths, audio_path):
-    print("Videos ko merge karke final short banayi ja rahi hai...")
-    audio = AudioFileClip(audio_path)
-    clips = []
+def create_video(video_paths, audio_path, bgm_path):
+    print("Videos, Voiceover aur BGM ko merge kiya ja raha hai...")
+    voice_audio = AudioFileClip(audio_path)
     
+    clips = []
     for path in video_paths:
         try:
             clip = VideoFileClip(path)
@@ -134,12 +144,25 @@ def create_video(video_paths, audio_path):
         
     final_video = concatenate_videoclips(clips, method="compose")
     
-    if final_video.duration < audio.duration:
-        final_video = final_video.fx(vfx.loop, duration=audio.duration)
+    if final_video.duration < voice_audio.duration:
+        final_video = final_video.fx(vfx.loop, duration=voice_audio.duration)
         
-    final_duration = min(audio.duration, 55.0)
+    final_duration = min(voice_audio.duration, 55.0)
     final_video = final_video.subclip(0, final_duration)
-    final_video = final_video.set_audio(audio)
+    
+    # Audio Mixing: Voiceover + Background Music (Low volume 15%)
+    if bgm_path and os.path.exists(bgm_path):
+        bgm_audio = AudioFileClip(bgm_path).volumex(0.15)
+        if bgm_audio.duration < final_duration:
+            bgm_audio = bgm_audio.fx(vfx.loop, duration=final_duration)
+        else:
+            bgm_audio = bgm_audio.subclip(0, final_duration)
+            
+        final_audio = CompositeAudioClip([voice_audio.subclip(0, final_duration), bgm_audio])
+    else:
+        final_audio = voice_audio.subclip(0, final_duration)
+        
+    final_video = final_video.set_audio(final_audio)
     
     output_path = "final_output.mp4"
     final_video.write_videofile(output_path, fps=30, codec='libx264', audio_codec='aac', preset='ultrafast')
@@ -151,7 +174,12 @@ def upload_to_youtube(file_path):
     youtube = build('youtube', 'v3', credentials=creds)
     
     body = {
-        'snippet': {'title': VIDEO_TITLE, 'description': VIDEO_DESCRIPTION, 'tags': ['shorts', 'facts', 'viral', 'hindi'], 'categoryId': '22'},
+        'snippet': {
+            'title': VIDEO_TITLE, 
+            'description': VIDEO_DESCRIPTION + " #Shorts", 
+            'tags': ['shorts', 'youtube shorts', 'hindi facts', 'viral'], 
+            'categoryId': '22'
+        },
         'status': {'privacyStatus': 'public'}
     }
     
@@ -162,8 +190,9 @@ def upload_to_youtube(file_path):
 
 if __name__ == "__main__":
     audio_file = generate_voiceover()
+    bgm_file = download_background_music()
     bg_videos = download_pexels_videos()
     if bg_videos:
-        final_vid = create_video(bg_videos, audio_file)
+        final_vid = create_video(bg_videos, audio_file, bgm_file)
         if final_vid:
             upload_to_youtube(final_vid)
